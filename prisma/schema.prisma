@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InductionStatus {
+  pending
+  processing
+  succeeded
+  failed
+}
+
+model Follower {
+  id          String     @id @default(uuid())
+  username    String     @unique
+  displayName String?
+  profileUrl  String
+  xUserId     String?    @unique
+  firstSeenAt DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  induction   Induction?
+}
+
+model Induction {
+  id          String           @id @default(uuid())
+  followerId  String           @unique
+  status      InductionStatus  @default(pending)
+  attempts    Int              @default(0)
+  lastError   String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  follower Follower @relation(fields: [followerId], references: [id])
+  token    Token?
+
+  @@index([status])
+}
+
+model Token {
+  id          String   @id @default(uuid())
+  inductionId String   @unique
+  name        String
+  symbol      String
+  metadataUri String
+  address     String   @unique
+  pumpfunUrl  String
+  txSignature String
+  createdAt   DateTime @default(now())
+
+  induction Induction @relation(fields: [inductionId], references: [id])
+
+  @@index([address])
+}
